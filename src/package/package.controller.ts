@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { PackageService } from './package.service';
 import { PackageDto } from './dto/package.dto';
 
@@ -14,5 +14,10 @@ export class PackageController {
   @Post()
   create(@Body() dto: PackageDto) {
     return this.packageService.create(dto);
+  }
+
+  @Delete(':id')
+  delete(@Param('id') id: string) {
+    return this.packageService.delete(id);
   }
 }

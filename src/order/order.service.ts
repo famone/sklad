@@ -1,13 +1,40 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { OrderDto, UpdateOrderStatusDto } from './dto/order.dto';
-import { EnumOrderStatus } from '@prisma/client';
+import { EnumOrderStatus, Prisma } from '@prisma/client';
 
 @Injectable()
 export class OrderService {
   constructor(private readonly prismaService: PrismaService) {}
 
-  async findAll(page: string = '1', per_page: string = '10') {
+  async findAll(
+    page: string = '1',
+    per_page: string = '10',
+    search: string = '',
+    status?: EnumOrderStatus,
+    date_from?: string,
+    date_to?: string,
+  ) {
+    const whereClause: Prisma.OrderWhereInput = {
+      ...(search && {
+        name: {
+          contains: search,
+          mode: Prisma.QueryMode.insensitive,
+        },
+      }),
+      ...(status && {
+        status,
+      }),
+      ...(date_from || date_to
+        ? {
+            createdAt: {
+              ...(date_from && { gte: new Date(date_from) }),
+              ...(date_to && { lte: new Date(date_to) }),
+            },
+          }
+        : {}),
+    };
+
     const [orders, total] = await this.prismaService.$transaction([
       this.prismaService.order.findMany({
         skip: (+page - 1) * +per_page,
@@ -15,6 +42,7 @@ export class OrderService {
         orderBy: {
           createdAt: 'desc',
         },
+        where: whereClause,
         include: {
           items: {
             include: {
@@ -23,7 +51,9 @@ export class OrderService {
           },
         },
       }),
-      this.prismaService.order.count(),
+      this.prismaService.order.count({
+        where: whereClause,
+      }),
     ]);
 
     return {

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Package } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PackageDto } from './dto/package.dto';
@@ -12,6 +12,18 @@ export class PackageService {
     return packages;
   }
 
+  async findById(id: string): Promise<Package> {
+    const packageItem = await this.prismaService.package.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!packageItem) throw new NotFoundException('Упаковка не найдена');
+
+    return packageItem;
+  }
+
   async create(dto: PackageDto): Promise<Package> {
     const packageItem = await this.prismaService.package.create({
       data: {
@@ -20,5 +32,17 @@ export class PackageService {
     });
 
     return packageItem;
+  }
+
+  async delete(id: string): Promise<string> {
+    const packageItem = await this.findById(id);
+
+    await this.prismaService.package.delete({
+      where: {
+        id,
+      },
+    });
+
+    return packageItem.id;
   }
 }

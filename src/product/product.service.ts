@@ -40,13 +40,14 @@ export class ProductService {
     return product;
   }
 
-  // async create(dto: PackageDto): Promise<Package> {
-  //   const packageItem = await this.prismaService.package.create({
-  //     data: {
-  //       name: dto.name,
-  //     },
-  //   });
+  async editProduct(id: string, dto: ProductDto) {
+    await this.findById(id);
 
-  //   return packageItem;
-  // }
+    return this.prismaService.product.update({
+      where: { id },
+      data: {
+        ...dto,
+      },
+    });
+  }
 }
