@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   Post,
   Req,
   Res,
@@ -14,6 +15,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { Request, type Response } from 'express';
 import { AuthGuard } from '@nestjs/passport';
+import { User } from '@prisma/client';
 
 @Controller('auth')
 export class AuthController {
@@ -38,5 +40,15 @@ export class AuthController {
   @Get('me')
   getMe(@Req() req: Request) {
     return req.user;
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Patch('change-avatar')
+  @HttpCode(HttpStatus.OK)
+  async changeAvatar(
+    @Req() req: Request & { user: User },
+    @Body('avatar') avatar: string,
+  ) {
+    return await this.authService.changeAvartar(avatar, req.user);
   }
 }

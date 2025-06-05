@@ -1,13 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { OrderDto, UpdateOrderStatusDto } from './dto/order.dto';
-import { EnumOrderStatus, Prisma } from '@prisma/client';
+import { EnumOrderStatus, EnumRole, Prisma, User } from '@prisma/client';
 
 @Injectable()
 export class OrderService {
   constructor(private readonly prismaService: PrismaService) {}
 
   async findAll(
+    user: User | null = null,
     page: string = '1',
     per_page: string = '10',
     search: string = '',
@@ -33,6 +34,9 @@ export class OrderService {
             },
           }
         : {}),
+      ...(user?.role === EnumRole.MANAGER && {
+        userId: user.id,
+      }),
     };
 
     const [orders, total] = await this.prismaService.$transaction([
@@ -44,6 +48,14 @@ export class OrderService {
         },
         where: whereClause,
         include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+            },
+          },
           items: {
             include: {
               product: true,
@@ -64,7 +76,7 @@ export class OrderService {
     };
   }
 
-  async createOrder(dto: OrderDto) {
+  async createOrder(dto: OrderDto, user: User) {
     const orderItems = dto.items.map((item) => ({
       quantity: item.quantity,
       price: item.price,
@@ -87,6 +99,11 @@ export class OrderService {
           create: orderItems,
         },
         total,
+        user: {
+          connect: {
+            id: user.id,
+          },
+        },
       },
     });
 
@@ -111,20 +128,21 @@ export class OrderService {
     });
   }
 
-  async getStatistics() {
+  async getStatistics(user: User) {
+    const baseWhere = (status: EnumOrderStatus) => ({
+      status,
+      ...(user.role === EnumRole.MANAGER && { userId: user.id }),
+    });
+
     const success = await this.prismaService.order.findMany({
-      where: {
-        status: EnumOrderStatus.PAYED,
-      },
+      where: baseWhere(EnumOrderStatus.PAYED),
       select: {
         total: true,
       },
     });
 
     const pending = await this.prismaService.order.findMany({
-      where: {
-        status: EnumOrderStatus.PENDING,
-      },
+      where: baseWhere(EnumOrderStatus.PENDING),
       select: {
         total: true,
       },

@@ -6,6 +6,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { OrderService } from './order.service';
@@ -14,7 +15,8 @@ import { EnumOrderStatus } from 'generated/prisma';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/guards/roles.guard';
 import { Roles } from 'src/decorators/roles.decorator';
-import { EnumRole } from '@prisma/client';
+import { EnumRole, User } from '@prisma/client';
+import { type Request } from 'express';
 
 @Controller('orders')
 export class OrderController {
@@ -23,6 +25,7 @@ export class OrderController {
   @UseGuards(AuthGuard('jwt'))
   @Get()
   async findAll(
+    @Req() req: Request & { user: User },
     @Query('page') page: string,
     @Query('per_page') per_page: string,
     @Query('search') search: string,
@@ -31,6 +34,7 @@ export class OrderController {
     @Query('date_to') date_to?: string,
   ) {
     return this.orderService.findAll(
+      req.user,
       page,
       per_page,
       search,
@@ -39,11 +43,13 @@ export class OrderController {
       date_to,
     );
   }
-
   @UseGuards(AuthGuard('jwt'))
   @Post()
-  async createOrder(@Body() dto: OrderDto) {
-    return this.orderService.createOrder(dto);
+  async createOrder(
+    @Body() dto: OrderDto,
+    @Req() req: Request & { user: User },
+  ) {
+    return this.orderService.createOrder(dto, req.user);
   }
 
   @UseGuards(AuthGuard('jwt'))
@@ -58,7 +64,7 @@ export class OrderController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(EnumRole.ADMIN, EnumRole.MANAGER)
   @Get('statistics')
-  async getStatistics() {
-    return this.orderService.getStatistics();
+  async getStatistics(@Req() req: Request & { user: User }) {
+    return this.orderService.getStatistics(req.user);
   }
 }

@@ -84,12 +84,27 @@ export class AuthService {
         email: true,
         name: true,
         role: true,
+        avatar: true,
       },
     });
     if (!user) {
       throw new NotFoundException('Пользователь не найден');
     }
     return user;
+  }
+
+  async changeAvartar(avatar: string, user: User) {
+    console.log(user.id);
+    const updatedUser = await this.prismaService.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        avatar,
+      },
+    });
+
+    return updatedUser;
   }
 
   private auth(res: Response, user: User) {
