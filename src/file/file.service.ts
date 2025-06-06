@@ -8,7 +8,7 @@ import { User } from '@prisma/client';
 export class FileService {
   constructor(private readonly authService: AuthService) {}
 
-  uploadFile(user: User, file: Express.Multer.File): Promise<User> {
+  uploadFile(user: User, file: Express.Multer.File) {
     if (!file || !file.originalname || !file.buffer) {
       throw new BadRequestException('Некорректный файл');
     }

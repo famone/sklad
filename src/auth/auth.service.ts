@@ -79,12 +79,8 @@ export class AuthService {
       where: {
         id,
       },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        avatar: true,
+      omit: {
+        password: true,
       },
     });
     if (!user) {
@@ -101,6 +97,9 @@ export class AuthService {
       },
       data: {
         avatar,
+      },
+      omit: {
+        password: true,
       },
     });
 
