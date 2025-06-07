@@ -2,13 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { OrderDto, UpdateOrderStatusDto } from './dto/order.dto';
 import { EnumOrderStatus, EnumRole, Prisma, User } from '@prisma/client';
+import { getOrdersVisibility } from 'src/policies/order.policy';
 
 @Injectable()
 export class OrderService {
   constructor(private readonly prismaService: PrismaService) {}
 
   async findAll(
-    user: User | null = null,
+    user: User,
     page: string = '1',
     per_page: string = '10',
     search: string = '',
@@ -34,9 +35,7 @@ export class OrderService {
             },
           }
         : {}),
-      ...(user?.role === EnumRole.MANAGER && {
-        userId: user.id,
-      }),
+      ...getOrdersVisibility(user),
     };
 
     const [orders, total] = await this.prismaService.$transaction([
