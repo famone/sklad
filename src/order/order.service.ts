@@ -3,10 +3,14 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { OrderDto, UpdateOrderStatusDto } from './dto/order.dto';
 import { EnumOrderStatus, EnumRole, Prisma, User } from '@prisma/client';
 import { getOrdersVisibility } from 'src/policies/order.policy';
+import { OrderGateway } from './order.gateway';
 
 @Injectable()
 export class OrderService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly orderGateway: OrderGateway,
+  ) {}
 
   async findAll(
     user: User,
@@ -118,6 +122,8 @@ export class OrderService {
     });
 
     if (!order) throw new NotFoundException('Продукт не найден');
+
+    this.orderGateway.sendOrderUpdated(order);
 
     return this.prismaService.order.update({
       where: { id },
